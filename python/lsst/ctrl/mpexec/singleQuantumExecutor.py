@@ -70,8 +70,8 @@ class SingleQuantumExecutor(QuantumExecutor):
 
     def execute(self, taskDef, quantum, butler):
         # Docstring inherited from QuantumExecutor.execute
+        self.setupLogging(taskDef, quantum)
         taskClass, config = taskDef.taskClass, taskDef.config
-        self.setupLogging(taskClass, config, quantum)
 
         # check whether to skip or delete old outputs
         if self.checkExistingOutputs(quantum, butler, taskDef):
@@ -98,19 +98,17 @@ class SingleQuantumExecutor(QuantumExecutor):
         task = self.makeTask(taskClass, config, butler)
         self.runQuantum(task, quantum, taskDef, butler)
 
-    def setupLogging(self, taskClass, config, quantum):
+    def setupLogging(self, taskDef, quantum):
         """Configure logging system for execution of this task.
 
         Ths method can setup logging to attach task- or
         quantum-specific information to log messages. Potentially this can
-        take into accout some info from task configuration as well.
+        take into account some info from task configuration as well.
 
         Parameters
         ----------
-        taskClass : `type`
-            Sub-class of `~lsst.pipe.base.PipelineTask`.
-        config : `~lsst.pipe.base.PipelineTaskConfig`
-            Configuration object for this task
+        taskDef : `lsst.pipe.base.TaskDef`
+            The task definition.
         quantum : `~lsst.daf.butler.Quantum`
             Single Quantum instance.
         """
@@ -118,9 +116,9 @@ class SingleQuantumExecutor(QuantumExecutor):
         dataIds = set(ref.dataId for ref in chain.from_iterable(quantum.inputs.values()))
         if dataIds:
             if len(dataIds) == 1:
-                Log.MDC("LABEL", str(dataIds.pop()))
+                Log.MDC("LABEL", f"{taskDef.label}:{dataIds.pop()}")
             else:
-                Log.MDC("LABEL", '[' + ', '.join([str(dataId) for dataId in dataIds]) + ']')
+                Log.MDC("LABEL", f'{taskDef.label}:[' + ', '.join([str(dataId) for dataId in dataIds]) + ']')
 
     def checkExistingOutputs(self, quantum, butler, taskDef):
         """Decide whether this quantum needs to be executed.
