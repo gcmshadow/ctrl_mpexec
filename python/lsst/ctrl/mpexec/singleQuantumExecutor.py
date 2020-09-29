@@ -27,6 +27,7 @@ __all__ = ['SingleQuantumExecutor']
 from collections import defaultdict
 import logging
 from itertools import chain
+import json
 
 # -----------------------------
 #  Imports for other modules --
@@ -114,11 +115,11 @@ class SingleQuantumExecutor(QuantumExecutor):
         """
         # include input dataIds into MDC
         dataIds = set(ref.dataId for ref in chain.from_iterable(quantum.inputs.values()))
+        label = taskDef.label
         if dataIds:
-            if len(dataIds) == 1:
-                Log.MDC("LABEL", f"{taskDef.label}:{dataIds.pop()}")
-            else:
-                Log.MDC("LABEL", f'{taskDef.label}:[' + ', '.join([str(dataId) for dataId in dataIds]) + ']')
+            dataIdStr = json.dumps([{str(k): v for k, v in dataId.items()} for dataId in dataIds])
+            label = f"{label}:{dataIdStr}"
+        Log.MDC("LABEL", label)
 
     def checkExistingOutputs(self, quantum, butler, taskDef):
         """Decide whether this quantum needs to be executed.
